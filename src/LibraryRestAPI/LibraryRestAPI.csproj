@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="ConsoleTableExt" Version="3.2.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.6" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="6.0.6" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.6" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="6.0.6" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.6" />
+      <PackageReference Include="morelinq" Version="3.3.2" />
+      <PackageReference Include="SQLite" Version="3.13.0" />
+      <PackageReference Include="X.PagedList" Version="8.4.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\LibraryRertAPI.DTOs\LibraryRertAPI.DTOs.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,53 @@
+﻿@page "/update_book/{Id}"
+@using LibraryRestAPI.DTOs
+@inject HttpClient Http
+@inject NavigationManager _nav
+
+<h1>Update book</h1>
+
+<EditForm Model="@updateBook" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator/>
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Title:"
+                                  @bind-Value="updateBook.Title"/>
+                    <MudTextField Label="Author:"
+                                  @bind-Value="updateBook.Author"/>
+                    <MudTextField Label="Genre:"
+                                  @bind-Value="updateBook.Genre"/>
+                    <MudTextField Label="Publisher"
+                                  @bind-Value="updateBook.Publisher"/>
+                    <MudDatePicker Label="Release year"
+                                  @bind-Date="updateBook.ReleaseYear"/>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Update</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    private BookUpdateDto updateBook = new BookUpdateDto();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var book = await Http.GetFromJsonAsync<BookDto>("https://localhost:7060/api/books/" + Id);
+        updateBook.Author = book!.Author;
+        updateBook.Title = book!.Title;
+        updateBook.Genre = book!.Genre;
+        updateBook.Publisher = book!.Publisher;
+        updateBook.ReleaseYear = book.ReleaseYear;
+    }
+
+    async void OnValidSubmit()
+    {
+        var resp = await Http.PutAsJsonAsync("https://localhost:7060/api/books/" + Id, updateBook);
+    }
+}

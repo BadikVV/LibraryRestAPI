@@ -1,0 +1,120 @@
+﻿@page "/bookInSubscription"
+@using LibraryRestAPI.DTOs
+@inject HttpClient Http
+@inject NavigationManager _nav
+@inject IJSRuntime _js
+@inject IDialogService DialogService
+@using BlazorWebGUI.Models
+
+<PageTitle>BookInSubscription</PageTitle>
+
+<h1>BookInSubscription</h1>
+
+<p>This component demonstrates fetching data from the server.</p>
+<MudButton @onclick="@(() => _nav.NavigateTo("/createBookInSubscription"))" Color="Color.Secondary">Add Book in subscription</MudButton>
+<MudTable ServerData="@(new Func<TableState, Task<TableData<BookInSubscriptionModel>>>(ServerReload))"
+          Dense="true" Hover="true" @ref="_table">
+    <ToolBarContent>
+        <MudText Typo="Typo.h5">BooksInSubscriptions</MudText>
+        <MudSpacer />
+        <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel SortLabel="Title" T="BookInSubscriptionModel">Title</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Author" T="BookInSubscriptionModel">Author</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Name" T="BookInSubscriptionModel">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Surname" T="BookInSubscriptionModel">Surname</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Start" T="BookInSubscriptionModel">Start</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="End" T="BookInSubscriptionModel">End</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="Status" T="BookInSubscriptionModel">Status</MudTableSortLabel></MudTh>
+        @* <MudTh><MudTableSortLabel SortLabel="Actions" T="BookInSubscriptionModel">Actions</MudTableSortLabel></MudTh> *@
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Title">@context.Title</MudTd>
+        <MudTd DataLabel="Author">@context.Author</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Surname">@context.Surname</MudTd>
+        <MudTd DataLabel="Start">@context.Start</MudTd>
+        <MudTd DataLabel="End">@context.End</MudTd>
+        <MudTd DataLabel="Status">@context.Status</MudTd>
+        @* <MudButton @onclick="@(() => _nav.NavigateTo("update_bookInSubcription/" + context.Id))" Color="Color.Primary">Update</MudButton> *@
+       
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No matching records found</MudText>
+    </NoRecordsContent>
+    <LoadingContent>
+        <MudText>Loading...</MudText>
+    </LoadingContent>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code {
+    private MudTable<BookInSubscriptionModel> _table;
+    private string? _searchString = null;
+    
+    private async Task Delete(Guid id)
+    {
+        var confirm = await _js.InvokeAsync<bool>("confirm", "Do you want to delete this ?");
+        if (confirm)
+        {
+            var bookInSubscription = await Http.GetFromJsonAsync<BookInSubscriptionDto>("https://localhost:7060/api/bookInSubscription/" + id);
+            if (bookInSubscription.BookId.ToString().Length == null)
+            {
+                var delete = await Http.DeleteAsync("https://localhost:7060/api/bookInSubscription/" + id);
+                _table.ReloadServerData(); 
+            }
+            else throw new Exception("Delete all books from the subscription before deleting");
+        }
+    }
+    
+    private async Task<TableData<BookInSubscriptionModel>> ServerReload(TableState state)
+    {
+        var orderDirection = "asc";
+        
+        if (state.SortDirection == SortDirection.Descending)
+            orderDirection = "desc";
+        if (state.SortDirection == SortDirection.None)
+            orderDirection = "";
+
+        var responseSub = await Http.GetFromJsonAsync<PaginatedListAPIResponse<BookInSubscriptionDto>>(
+            $"https://localhost:7060/api/bookInSubscription/list?pageNumber={state.Page + 1}&pageSize={state.PageSize}" +
+            $"&search={_searchString}&orderBy={state.SortLabel}&orderDirection={orderDirection}");
+        
+        var booksInSubscriptionModelList = new List<BookInSubscriptionModel>();
+        foreach (var bookInSubscription in responseSub!.Data!)
+        {
+            var modelBinS =  new BookInSubscriptionModel();
+            var responseBook = await Http.GetFromJsonAsync<APIResponse<BookDto>>
+                ("https://localhost:7060/api/books/"+ bookInSubscription.BookId);
+            if (responseBook!.Data != null)
+            {
+                modelBinS.Author = responseBook.Data.Author;
+                modelBinS.Title = responseBook.Data.Title;
+            }
+            var responseSubscription = await Http.GetFromJsonAsync<APIResponse<SubscriptionDto>>
+                ("https://localhost:7060/api/subscription/"+ bookInSubscription.SubscriptionId);
+            if (responseSubscription!.Data != null)
+            {
+                modelBinS.Name = responseSubscription!.Data.Name;
+                modelBinS.Surname = responseSubscription!.Data.Surname;
+            }
+            
+            modelBinS.Start = bookInSubscription.Start;
+            modelBinS.End = bookInSubscription.End;
+            modelBinS.Status = bookInSubscription.Status;
+            
+            booksInSubscriptionModelList.Add(modelBinS);
+        }
+         return new TableData<BookInSubscriptionModel>() {TotalItems = responseSub.Pagination.Total, Items = booksInSubscriptionModelList};
+    }
+    
+    private void OnSearch(string text)
+    {
+        _searchString = text;
+        _table.ReloadServerData();
+    }
+}

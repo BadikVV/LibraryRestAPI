@@ -1,0 +1,41 @@
+﻿@page "/create_subscription"
+@using LibraryRestAPI.DTOs
+@inject HttpClient Http
+@inject NavigationManager _nav
+<h3>Create new subscription</h3>
+
+<EditForm Model="@newSubscription" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator/>
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Name:" 
+                                  @bind-Value="newSubscription.Name"/>
+                    <MudTextField Label="Surname:"
+                                  @bind-Value="newSubscription.Surname"/>
+                    <MudTextField Label="Patronymic:" 
+                                  @bind-Value="newSubscription.Patronymic"/>
+                    <MudTextField Label="PhoneNumber" HelperText="Max. 8 characters"
+                                  @bind-Value="newSubscription.PhoneNumber"/>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Send</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+@code {
+    private SubscriptionCreateDto newSubscription = new SubscriptionCreateDto();
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    async void OnValidSubmit()
+    {
+        var resp = await Http.PostAsJsonAsync("https://localhost:7060/api/subscription/", newSubscription);
+    }
+}

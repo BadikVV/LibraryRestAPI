@@ -1,0 +1,50 @@
+﻿@page "/update_subscription/{Id}"
+@using LibraryRestAPI.DTOs
+@inject HttpClient Http
+@inject NavigationManager _nav
+
+<h1>Update subscription</h1>
+
+<EditForm Model="@updateSubscription" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator/>
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Name:"
+                                  @bind-Value="updateSubscription.Name"/>
+                    <MudTextField Label="Surname:"
+                                  @bind-Value="updateSubscription.Surname"/>
+                    <MudTextField Label="Patronymic:"
+                                  @bind-Value="updateSubscription.Patronymic"/>
+                    <MudTextField Label="PhoneNumber"
+                                  @bind-Value="updateSubscription.PhoneNumber"/>
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Update</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    private SubscriptionUpdateDto updateSubscription = new SubscriptionUpdateDto();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var subscription = await Http.GetFromJsonAsync<SubscriptionDto>("https://localhost:7060/api/subscription/" + Id);
+        updateSubscription.Name = subscription!.Name;
+        updateSubscription.Surname = subscription!.Surname;
+        updateSubscription.Patronymic = subscription!.Patronymic;
+        updateSubscription.PhoneNumber = subscription!.PhoneNumber;
+    }
+
+    async void OnValidSubmit()
+    {
+        var resp = await Http.PutAsJsonAsync("https://localhost:7060/api/subscription/" + Id, updateSubscription);
+    }
+}

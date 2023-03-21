@@ -1,0 +1,78 @@
+﻿@page "/createBookInSubscription"
+@using LibraryRestAPI.DTOs
+@inject HttpClient Http
+@inject NavigationManager _nav
+
+<h3>Create book in subscription</h3>
+@if (_bookInSubscriptions == null || _booksNotInUse == null || _subscriptions == null)
+{
+    <p>
+        <em>Loading...</em>
+    </p>
+}
+else
+{
+    <EditForm Model="@newBookInSubscription" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator/>
+        <MudGrid>
+            <MudItem xs="12" sm="7">
+                <MudCard>
+                    <MudCardContent>
+                        <MudSelect @bind-Value="newBookInSubscription.SubscriptionId" Label="Subscription" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            @foreach (var subscription in _subscriptions)
+                            {
+                                <MudSelectItem Value="subscription.Id">@subscription.Name; @subscription.Surname</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudSelect @bind-Value="newBookInSubscription.BookId" Label="Book" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                            @foreach (var book in _booksNotInUse)
+                            {
+                                <MudSelectItem Value="book.Id">@book.Title; @book.Author</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudDatePicker @bind-Date="newBookInSubscription.Start">Start</MudDatePicker>
+                        <MudDatePicker @bind-Date="newBookInSubscription.End">End</MudDatePicker>
+                        <MudCheckBox @bind-Checked="newBookInSubscription.Status">Status</MudCheckBox>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Send</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </EditForm>
+}
+@code {
+    private List<BookInSubscriptionDto>? _bookInSubscriptions;
+    private BookInSubscriptionCreateDto newBookInSubscription = new BookInSubscriptionCreateDto();
+    private List<BookDto>? _booksNotInUse;
+    private List<SubscriptionDto>? _subscriptions;
+
+    async void OnValidSubmit()
+    {
+        if (newBookInSubscription.BookId == Guid.Empty ||
+            newBookInSubscription.SubscriptionId == Guid.Empty ||
+            newBookInSubscription.Start == null ||
+            newBookInSubscription.End == null)
+            throw new Exception("Нужно заполнить все поля");
+        
+            var resp = await Http.PostAsJsonAsync
+            ("https://localhost:7060/api/bookInSubscription/", newBookInSubscription);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Task.Delay(1000);
+        _bookInSubscriptions = await Http.GetFromJsonAsync<List<BookInSubscriptionDto>>
+            ("https://localhost:7060/api/bookInSubscription/list");
+        var responseSub = await Http.GetFromJsonAsync<PaginatedListAPIResponse<SubscriptionDto>>
+            ("https://localhost:7060/api/subscription/list");
+        _subscriptions = responseSub.Data;
+        var books = await Http.GetFromJsonAsync<List<BookDto>>
+            ("https://localhost:7060/api/books/list");
+        _booksNotInUse = books.
+            Where(b => _bookInSubscriptions.Any(bs => bs.BookId == b.Id && bs.Status) ||
+                       _bookInSubscriptions.All(bs => bs.BookId != b.Id)).ToList();
+    }
+
+}
